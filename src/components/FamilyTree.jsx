@@ -15,7 +15,7 @@ export default function FamilyTree({ persons, user, onEdit, onDelete, onAddPerso
   const [showStats, setShowStats] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [sortOrder, setSortOrder] = useState('alpha');
-  const editor = isEditor(user?.email, roleOverride);
+  const editor = isEditor(user?.email, roleOverride, user?.name);
 
   const tree = useMemo(() => buildTree(persons, sortOrder), [persons, sortOrder]);
 

@@ -68,8 +68,8 @@ function AppContent() {
     const success = await createPerson(personData);
     if (success) {
       const memberName = `${personData.firstName || ''} ${personData.paternalLastName || ''} ${personData.maternalLastName || ''}`.trim();
-      const role = roleOverride || (isAdmin(user?.email) ? 'admin' : isEditor(user?.email) ? 'editor' : 'usuario');
-      const addsDirectly = canEditorAddDirectly(personData, roleOverride, user?.email);
+      const role = roleOverride || (isAdmin(user?.email) ? 'admin' : isEditor(user?.email, null, user?.name) ? 'editor' : 'usuario');
+      const addsDirectly = canEditorAddDirectly(personData, roleOverride, user?.email, user?.name);
 
       if (role !== 'admin') {
         const emailResult = await sendMemberAddedNotification(memberName, user?.name || user?.email, user?.email);

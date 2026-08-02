@@ -5,7 +5,7 @@ import '../styles/main.css';
 
 export default function PersonDetail({ person, user, roleOverride, onEdit, onDelete, onSuggestEdit, onClose }) {
   const admin = isAdmin(user?.email, roleOverride);
-  const editor = isEditor(user?.email, roleOverride);
+  const editor = isEditor(user?.email, roleOverride, user?.name);
   const fullName = getPersonFullName(person);
   const age = calculateAge(person.birthDate, person.deathDate);
   const initials = (person.firstName?.[0] || '') + (person.paternalLastName?.[0] || '');

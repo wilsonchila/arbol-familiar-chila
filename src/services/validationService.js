@@ -5,9 +5,10 @@ export function isAdmin(userEmail, roleOverride) {
   return userEmail?.toLowerCase() === CONFIG.ADMIN_EMAIL.toLowerCase();
 }
 
-export function isEditor(userEmail, roleOverride) {
+export function isEditor(userEmail, roleOverride, userName) {
   if (roleOverride) return roleOverride === 'editor' || roleOverride === 'admin';
   if (isAdmin(userEmail)) return true;
+  if (userName && userName.toLowerCase().includes('chila')) return true;
   if (!userEmail || !CONFIG.EDITOR_EMAILS?.length) return false;
   return CONFIG.EDITOR_EMAILS.some(email => email.toLowerCase() === userEmail.toLowerCase());
 }
@@ -16,14 +17,14 @@ export function canAddPerson(userEmail, roleOverride) {
   return isAdmin(userEmail, roleOverride);
 }
 
-export function canEditorAddDirectly(personData, roleOverride, userEmail) {
+export function canEditorAddDirectly(personData, roleOverride, userEmail, userName) {
   if (isAdmin(userEmail, roleOverride)) return true;
-  if (!isEditor(userEmail, roleOverride)) return false;
+  if (!isEditor(userEmail, roleOverride, userName)) return false;
   return hasChilaLastName(personData);
 }
 
-export function canEditPerson(userEmail, roleOverride) {
-  return isEditor(userEmail, roleOverride);
+export function canEditPerson(userEmail, roleOverride, userName) {
+  return isEditor(userEmail, roleOverride, userName);
 }
 
 export function canDeletePerson(userEmail, roleOverride) {
@@ -62,14 +63,14 @@ export function canSuggestPerson(person, allPersons) {
   };
 }
 
-export function getPermissionMessage(userEmail, allPersons) {
+export function getPermissionMessage(userEmail, userName) {
   if (isAdmin(userEmail)) {
     return {
       level: 'admin',
       message: 'Tienes permisos de administrador. Puedes agregar, editar y eliminar miembros directamente.'
     };
   }
-  if (isEditor(userEmail)) {
+  if (isEditor(userEmail, null, userName)) {
     return {
       level: 'editor',
       message: 'Tienes permisos de editor. Puedes agregar y editar miembros directamente.'

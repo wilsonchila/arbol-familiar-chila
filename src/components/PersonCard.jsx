@@ -5,7 +5,7 @@ import '../styles/tree.css';
 
 export default function PersonCard({ person, user, roleOverride, onEdit, onDelete, onSuggestEdit, showRelationship }) {
   const admin = isAdmin(user?.email, roleOverride);
-  const editor = isEditor(user?.email, roleOverride);
+  const editor = isEditor(user?.email, roleOverride, user?.name);
   const fullName = getPersonFullName(person);
   const info = getPersonDisplayInfo(person);
   const age = calculateAge(person.birthDate, person.deathDate);
