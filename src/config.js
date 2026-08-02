@@ -6,7 +6,7 @@ export const CONFIG = {
   SHEET_NAME: 'Arbol Familiar Chila',
   SUGGESTIONS_SHEET: 'Sugerencias',
   CHAT_SHEET: 'ChatMensajes',
-  EDITOR_EMAILS: ['holman2chila@gmail.com'],
+  EDITOR_EMAILS: ['holman2chila@gmail.com','operaciones@sunnybotics.com'],
   EMAILJS_SERVICE_ID: 'service_ktcolow',
   EMAILJS_TEMPLATE_ID: 'template_s3b7wft',
   EMAILJS_PUBLIC_KEY: 'kgYe9t-olKxqB54Z2',
