@@ -176,6 +176,28 @@ export default function GenerationGroup({ generation, user, roleOverride, onEdit
                   </div>
                 </div>
               )}
+
+              {group.type === 'family' && (
+                <div className="family-line-group">
+                  <div className="group-label">
+                    <span className="group-icon">&#128106;</span>
+                    <span>{group.label}</span>
+                  </div>
+                  <div className="persons-list">
+                    {group.children.map(person => (
+                      <PersonCard
+                        key={person.id}
+                        person={person}
+                        user={user}
+                        roleOverride={roleOverride}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        onSuggestEdit={onSuggestEdit}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

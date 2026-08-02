@@ -1,5 +1,27 @@
+function findParentByName(parentName, allPersons) {
+  if (!parentName) return null;
+  const normalizedName = parentName.toLowerCase().trim();
+  return allPersons.find(p => {
+    const fullName = `${p.firstName || ''} ${p.paternalLastName || ''} ${p.maternalLastName || ''}`.toLowerCase().trim();
+    return fullName === normalizedName;
+  });
+}
+
 export function buildTree(persons, sortOrder = 'alpha') {
   const approved = persons.filter(p => p.status === 'approved');
+
+  approved.forEach(person => {
+    if (!person.parentIds && (person.fatherName || person.motherName)) {
+      const parentIds = [];
+      const father = findParentByName(person.fatherName, approved);
+      const mother = findParentByName(person.motherName, approved);
+      if (father) parentIds.push(father.id);
+      if (mother) parentIds.push(mother.id);
+      if (parentIds.length > 0) {
+        person.parentIds = parentIds.join(',');
+      }
+    }
+  });
 
   const generations = {};
   approved.forEach(person => {
@@ -27,7 +49,7 @@ function sortPersons(persons, sortOrder) {
     sorted.sort((a, b) => {
       const dateA = a.birthDate ? new Date(a.birthDate) : new Date(0);
       const dateB = b.birthDate ? new Date(b.birthDate) : new Date(0);
-      return dateA - dateB; // eldest first
+      return dateA - dateB;
     });
   } else {
     sorted.sort((a, b) => {
@@ -42,9 +64,9 @@ function sortPersons(persons, sortOrder) {
 function getGenerationLabel(gen) {
   const labels = {
     0: 'Generación 0',
-    1: 'Generación 1 - Hijos',
-    2: 'Generación 2 - Nietos',
-    3: 'Generación 3 - Bisnietos',
+    1: 'Generación 1 - Hijos / Sobrinos 1er grado',
+    2: 'Generación 2 - Nietos / Sobrinos 2do grado',
+    3: 'Generación 3 - Bisnietos / Sobrinos 3er grado',
     4: 'Generación 4 - Tataranietos',
     5: 'Generación 5 - Quinta Generación'
   };
@@ -78,10 +100,12 @@ function groupByFamilyLine(persons, allPersons, genNumber, sortOrder) {
 
       const siblings = sortPersons(persons.filter(p =>
         !p.wifeNumber &&
-        !p.parentIds &&
         p.id !== santiago.id &&
-        !processed.has(p.id)
+        !processed.has(p.id) &&
+        (p.parentIds || '').split(',').some(id => id.trim()) ||
+        (!p.parentIds && (p.fatherName || p.motherName))
       ), sortOrder);
+
       if (siblings.length > 0) {
         santiagoGroup.siblings = siblings;
         siblings.forEach(s => processed.add(s.id));
@@ -124,60 +148,53 @@ function groupByFamilyLine(persons, allPersons, genNumber, sortOrder) {
       if (g.type === 'other') g.persons = sortPersons(g.persons, sortOrder);
     });
   } else {
-    const wifeGroups = {};
-    const ungrouped = [];
+    const parentGroups = {};
 
     persons.forEach(person => {
-      if (person.parentIds) {
-        const parentIds = person.parentIds.split(',').map(s => s.trim());
-        const motherWifeNumber = findMotherWifeNumber(parentIds, allPersons);
+      const parentIds = person.parentIds ? person.parentIds.split(',').map(s => s.trim()).filter(Boolean) : [];
 
-        if (motherWifeNumber) {
-          const key = `wife_${motherWifeNumber}`;
-          if (!wifeGroups[key]) wifeGroups[key] = { wifeNumber: motherWifeNumber, children: [] };
-          wifeGroups[key].children.push(person);
-        } else {
-          ungrouped.push(person);
+      if (parentIds.length > 0) {
+        const mother = allPersons.find(p => parentIds.includes(p.id) && p.gender === 'F');
+        const father = allPersons.find(p => parentIds.includes(p.id) && p.gender === 'M');
+        const key = parentIds.sort().join('_');
+
+        if (!parentGroups[key]) {
+          parentGroups[key] = {
+            father,
+            mother,
+            children: []
+          };
         }
+        parentGroups[key].children.push(person);
       } else {
-        ungrouped.push(person);
+        const key = 'ungrouped';
+        if (!parentGroups[key]) {
+          parentGroups[key] = { father: null, mother: null, children: [] };
+        }
+        parentGroups[key].children.push(person);
       }
     });
 
-    Object.keys(wifeGroups).sort().forEach(key => {
-      const { wifeNumber, children } = wifeGroups[key];
-      const wife = allPersons.find(p => p.wifeNumber === wifeNumber && p.generation === 0);
+    Object.keys(parentGroups).sort().forEach(key => {
+      const { father, mother, children } = parentGroups[key];
+
+      let label = 'Otros miembros';
+      if (father || mother) {
+        const parentNames = [];
+        if (father) parentNames.push(`${father.firstName} ${father.paternalLastName}`);
+        if (mother) parentNames.push(`${mother.firstName} ${mother.paternalLastName}`);
+        label = `Hijos de ${parentNames.join(' y ')}`;
+      }
 
       groups.push({
-        type: 'wife_line',
-        label: wife
-          ? `Hijos de Esposa ${wifeNumber}: ${wife.firstName} ${wife.paternalLastName}`
-          : `Línea Esposa ${wifeNumber}`,
-        wife,
+        type: 'family',
+        label,
         children: sortPersons(children, sortOrder)
       });
     });
-
-    if (ungrouped.length > 0) {
-      groups.push({
-        type: 'other',
-        label: 'Otros miembros',
-        persons: sortPersons(ungrouped, sortOrder)
-      });
-    }
   }
 
   return groups;
-}
-
-function findMotherWifeNumber(parentIds, allPersons) {
-  for (const parentId of parentIds) {
-    const mother = allPersons.find(p => p.id === parentId && p.gender === 'F');
-    if (mother && mother.wifeNumber) {
-      return mother.wifeNumber;
-    }
-  }
-  return null;
 }
 
 export function buildFamilyMap(persons) {
@@ -187,9 +204,45 @@ export function buildFamilyMap(persons) {
 }
 
 export function getChildren(personId, persons) {
+  return persons.filter(p => {
+    if (p.parentIds) {
+      return p.parentIds.split(',').map(s => s.trim()).includes(personId);
+    }
+    return false;
+  });
+}
+
+export function getSiblings(personId, persons) {
+  const person = persons.find(p => p.id === personId);
+  if (!person || !person.parentIds) return [];
+  const parentIds = person.parentIds.split(',').map(s => s.trim());
   return persons.filter(p =>
-    p.parentIds && p.parentIds.split(',').map(s => s.trim()).includes(personId)
+    p.id !== personId &&
+    p.parentIds &&
+    parentIds.some(pid => p.parentIds.split(',').map(s => s.trim()).includes(pid))
   );
+}
+
+export function getNephews(personId, persons, degree = 1) {
+  const siblings = getSiblings(personId, persons);
+  let result = siblings;
+
+  for (let i = 1; i < degree; i++) {
+    const nextGeneration = [];
+    result.forEach(person => {
+      const children = getChildren(person.id, persons);
+      nextGeneration.push(...children);
+    });
+    result = nextGeneration;
+  }
+
+  const nephews = [];
+  result.forEach(sibling => {
+    const children = getChildren(sibling.id, persons);
+    nephews.push(...children);
+  });
+
+  return nephews;
 }
 
 export function getSpouses(personId, persons) {
