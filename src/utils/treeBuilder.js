@@ -23,9 +23,10 @@ export function buildTree(persons, sortOrder = 'alpha') {
     }
   });
 
+  const memo = {};
   const generations = {};
   approved.forEach(person => {
-    const gen = person.generation || 0;
+    const gen = computeGeneration(person, approved, memo);
     if (!generations[gen]) generations[gen] = [];
     generations[gen].push(person);
   });
@@ -275,15 +276,67 @@ export function isPersonAlive(person) {
   return person.isAlive === true || person.isAlive === 'true' || person.isAlive === 'TRUE';
 }
 
+function findParentByNameLocal(parentName, allPersons) {
+  if (!parentName) return null;
+  const normalizedName = parentName.toLowerCase().trim();
+  return allPersons.find(p => {
+    const fullName = `${p.firstName || ''} ${p.paternalLastName || ''} ${p.maternalLastName || ''}`.toLowerCase().trim();
+    return fullName === normalizedName;
+  });
+}
+
+function computeGeneration(person, allPersons, memo = {}) {
+  if (memo[person.id] !== undefined) return memo[person.id];
+
+  const parentIds = person.parentIds ? person.parentIds.split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  if (parentIds.length > 0) {
+    let maxParentGen = -1;
+    for (const parentId of parentIds) {
+      const parent = allPersons.find(p => p.id === parentId);
+      if (parent) {
+        const parentGen = computeGeneration(parent, allPersons, memo);
+        if (parentGen > maxParentGen) maxParentGen = parentGen;
+      }
+    }
+    if (maxParentGen >= 0) {
+      memo[person.id] = maxParentGen + 1;
+      return memo[person.id];
+    }
+  }
+
+  if (person.fatherName || person.motherName) {
+    const father = findParentByNameLocal(person.fatherName, allPersons);
+    const mother = findParentByNameLocal(person.motherName, allPersons);
+    let maxParentGen = -1;
+    if (father) {
+      const fGen = computeGeneration(father, allPersons, memo);
+      if (fGen > maxParentGen) maxParentGen = fGen;
+    }
+    if (mother) {
+      const mGen = computeGeneration(mother, allPersons, memo);
+      if (mGen > maxParentGen) maxParentGen = mGen;
+    }
+    if (maxParentGen >= 0) {
+      memo[person.id] = maxParentGen + 1;
+      return memo[person.id];
+    }
+  }
+
+  memo[person.id] = person.generation || 0;
+  return memo[person.id];
+}
+
 export function computeStats(persons) {
   const approved = persons.filter(p => p.status === 'approved');
   const total = approved.length;
   const alive = approved.filter(p => isPersonAlive(p)).length;
   const deceased = total - alive;
 
+  const memo = {};
   const generations = {};
   approved.forEach(p => {
-    const gen = p.generation || 0;
+    const gen = computeGeneration(p, approved, memo);
     generations[gen] = (generations[gen] || 0) + 1;
   });
 
