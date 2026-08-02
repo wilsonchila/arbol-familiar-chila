@@ -42,10 +42,8 @@ export default function FamilyTree({ persons, user, onEdit, onDelete, onAddPerso
 
   const handleSelectPerson = (person) => {
     setSelectedPerson(person);
-    const element = document.getElementById(`person-${person.id}`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+    setEditingPerson(person);
+    setShowForm(true);
   };
 
   return (
