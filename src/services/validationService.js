@@ -2,7 +2,11 @@ import { CONFIG } from '../config';
 
 export function isAdmin(userEmail, roleOverride) {
   if (roleOverride) return roleOverride === 'admin';
-  return userEmail?.toLowerCase() === CONFIG.ADMIN_EMAIL.toLowerCase();
+  if (!userEmail) return false;
+  if (CONFIG.ADMIN_EMAILS?.length) {
+    return CONFIG.ADMIN_EMAILS.some(email => email.toLowerCase() === userEmail.toLowerCase());
+  }
+  return userEmail.toLowerCase() === CONFIG.ADMIN_EMAIL.toLowerCase();
 }
 
 export function isEditor(userEmail, roleOverride, userName) {
