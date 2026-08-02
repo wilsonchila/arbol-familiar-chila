@@ -143,10 +143,15 @@ export async function deletePerson(personId, token) {
     if (rowIndex === -1) throw new Error('Person not found');
 
     const rowNum = rowIndex + 2;
-    const url = `${SHEETS_API}/${CONFIG.SHEET_ID}/values/'${CONFIG.SHEET_NAME}'!A${rowNum}:T${rowNum}:clear`;
+    const emptyRow = FIELDS_ARRAY.map(() => '');
+    const url = `${SHEETS_API}/${CONFIG.SHEET_ID}/values/'${CONFIG.SHEET_NAME}'!A${rowNum}:V${rowNum}?valueInputOption=USER_ENTERED`;
     const response = await fetch(url, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` }
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ values: [emptyRow] })
     });
 
     if (!response.ok) throw new Error('Error deleting person');
