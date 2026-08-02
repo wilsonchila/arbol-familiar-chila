@@ -355,10 +355,8 @@ export function computeStats(persons) {
   const generations = {};
   approved.forEach(p => {
     const gen = computeGeneration(p, approved, memo);
-    console.log(`[Stats] ${p.firstName} ${p.paternalLastName}: gen=${gen}, fatherName=${p.fatherName}, motherName=${p.motherName}, parentIds=${p.parentIds}`);
     generations[gen] = (generations[gen] || 0) + 1;
   });
 
-  console.log('[Stats] Generations:', generations);
   return { total, alive, deceased, generations, approved };
 }

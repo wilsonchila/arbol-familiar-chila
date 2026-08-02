@@ -17,6 +17,8 @@ export default function GenerationGroup({ generation, user, roleOverride, onEdit
       } else if (group.type === 'wife_line') {
         if (group.wife) count += 1;
         if (group.children) count += group.children.length;
+      } else if (group.type === 'family') {
+        count += group.children?.length || 0;
       } else if (group.type === 'other') {
         count += group.persons?.length || 0;
       }
