@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import GenerationGroup from './GenerationGroup';
 import SearchBar from './SearchBar';
 import PersonForm from './PersonForm';
+import PersonCard from './PersonCard';
 import StatsBar from './StatsBar';
 import { buildTree } from '../utils/treeBuilder';
 import { isEditor } from '../services/validationService';
@@ -42,8 +43,10 @@ export default function FamilyTree({ persons, user, onEdit, onDelete, onAddPerso
 
   const handleSelectPerson = (person) => {
     setSelectedPerson(person);
-    setEditingPerson(person);
-    setShowForm(true);
+  };
+
+  const handleCloseDetail = () => {
+    setSelectedPerson(null);
   };
 
   return (
@@ -120,6 +123,22 @@ export default function FamilyTree({ persons, user, onEdit, onDelete, onAddPerso
           onSave={handleSavePerson}
           onCancel={() => { setShowForm(false); setEditingPerson(null); }}
         />
+      )}
+
+      {selectedPerson && (
+        <div className="person-detail-overlay" onClick={handleCloseDetail}>
+          <div className="person-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="close-detail-btn" onClick={handleCloseDetail}>&#10005;</button>
+            <PersonCard
+              person={selectedPerson}
+              user={user}
+              roleOverride={roleOverride}
+              onEdit={(p) => { setSelectedPerson(null); handleEditPerson(p); }}
+              onDelete={(id) => { setSelectedPerson(null); onDelete(id); }}
+              onSuggestEdit={(p) => { setSelectedPerson(null); handleEditPerson(p); }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
