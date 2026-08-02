@@ -23,6 +23,7 @@ export default function GenerationGroup({ generation, user, roleOverride, onEdit
         count += group.persons?.length || 0;
       }
     });
+    console.log(`[GenGroup] Gen ${generation.number}: ${count} miembros`, generation.persons.map(g => `${g.type}(${g.children?.length || g.persons?.length || 0})`));
     return count;
   };
 
