@@ -143,18 +143,33 @@ export async function deletePerson(personId, token) {
     if (rowIndex === -1) throw new Error('Person not found');
 
     const rowNum = rowIndex + 2;
-    const emptyRow = FIELDS_ARRAY.map(() => '');
-    const url = `${SHEETS_API}/${CONFIG.SHEET_ID}/values/'${CONFIG.SHEET_NAME}'!A${rowNum}:V${rowNum}?valueInputOption=USER_ENTERED`;
-    const response = await fetch(url, {
-      method: 'PUT',
+
+    const batchUpdateUrl = `${SHEETS_API}/${CONFIG.SHEET_ID}:batchUpdate`;
+    const response = await fetch(batchUpdateUrl, {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ values: [emptyRow] })
+      body: JSON.stringify({
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId: 0,
+              dimension: 'ROWS',
+              startIndex: rowNum - 1,
+              endIndex: rowNum
+            }
+          }
+        }]
+      })
     });
 
-    if (!response.ok) throw new Error('Error deleting person');
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      console.error('Delete error:', err);
+      throw new Error('Error deleting person');
+    }
     return true;
   } catch (error) {
     console.error('Error deleting person:', error);

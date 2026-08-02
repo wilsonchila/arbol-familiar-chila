@@ -55,12 +55,15 @@ export default function PersonForm({ persons, editingPerson, user, onSave, onCan
     }
   }, [editingPerson]);
 
+  const upperFields = ['firstName', 'paternalLastName', 'maternalLastName', 'address', 'notes', 'fatherName', 'motherName'];
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+    let finalValue = type === 'checkbox' ? checked : value;
+    if (upperFields.includes(name) && typeof finalValue === 'string') {
+      finalValue = finalValue.toUpperCase();
+    }
+    setFormData(prev => ({ ...prev, [name]: finalValue }));
     setValidationError('');
   };
 
