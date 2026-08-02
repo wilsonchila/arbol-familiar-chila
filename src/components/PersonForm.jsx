@@ -57,13 +57,35 @@ export default function PersonForm({ persons, editingPerson, user, onSave, onCan
 
   const upperFields = ['firstName', 'paternalLastName', 'maternalLastName', 'address', 'notes', 'fatherName', 'motherName'];
 
+  const findParentGeneration = (parentName) => {
+    if (!parentName) return null;
+    const normalizedName = parentName.toLowerCase().trim();
+    const parent = persons.find(p => {
+      const fullName = `${p.firstName || ''} ${p.paternalLastName || ''} ${p.maternalLastName || ''}`.toLowerCase().trim();
+      return fullName === normalizedName;
+    });
+    return parent ? (parent.generation || 0) : null;
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     let finalValue = type === 'checkbox' ? checked : value;
     if (upperFields.includes(name) && typeof finalValue === 'string') {
       finalValue = finalValue.toUpperCase();
     }
-    setFormData(prev => ({ ...prev, [name]: finalValue }));
+
+    const newState = { ...formData, [name]: finalValue };
+
+    if (name === 'fatherName' || name === 'motherName') {
+      const fatherGen = findParentGeneration(name === 'fatherName' ? finalValue : newState.fatherName);
+      const motherGen = findParentGeneration(name === 'motherName' ? finalValue : newState.motherName);
+      const parentGen = Math.max(fatherGen ?? -1, motherGen ?? -1);
+      if (parentGen >= 0) {
+        newState.generation = parentGen + 1;
+      }
+    }
+
+    setFormData(newState);
     setValidationError('');
   };
 
