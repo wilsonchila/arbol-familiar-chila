@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { fetchAllPersons, addPerson, updatePerson, deletePerson, fetchSuggestions, addSuggestion, updateSuggestionStatus } from '../services/sheetsService';
-import { isAdmin } from '../services/validationService';
+import { isAdmin, isEditor, canEditorAddDirectly } from '../services/validationService';
 import { generateId } from '../utils/formatters';
 
 export function useFamilyData(token, user) {
@@ -45,13 +45,16 @@ export function useFamilyData(token, user) {
         id: generateId(),
         createdBy: user?.email || '',
         createdAt: new Date().toISOString(),
-        status: isAdmin(user?.email) ? 'approved' : 'suggested'
+        status: 'approved'
       };
 
-      if (isAdmin(user?.email)) {
+      const canAddDirectly = isAdmin(user?.email) || canEditorAddDirectly(personData, null, user?.email, user?.name);
+
+      if (canAddDirectly) {
         await addPerson(newPerson, token);
         setPersons(prev => [...prev, newPerson]);
       } else {
+        newPerson.status = 'suggested';
         await addSuggestion({
           id: generateId(),
           suggestedBy: user?.email,
@@ -71,7 +74,7 @@ export function useFamilyData(token, user) {
   }, [token, user]);
 
   const editPerson = useCallback(async (personId, updatedFields) => {
-    if (!token || !isAdmin(user?.email)) return false;
+    if (!token || (!isAdmin(user?.email) && !isEditor(user?.email, null, user?.name))) return false;
     setLoading(true);
     setError(null);
     try {
