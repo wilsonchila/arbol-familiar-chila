@@ -1,9 +1,18 @@
 function findParentByName(parentName, allPersons) {
   if (!parentName) return null;
   const normalizedName = parentName.toLowerCase().trim();
-  return allPersons.find(p => {
+
+  const exactMatch = allPersons.find(p => {
     const fullName = `${p.firstName || ''} ${p.paternalLastName || ''} ${p.maternalLastName || ''}`.toLowerCase().trim();
     return fullName === normalizedName;
+  });
+  if (exactMatch) return exactMatch;
+
+  const nameParts = normalizedName.split(/\s+/).filter(Boolean);
+  return allPersons.find(p => {
+    const firstName = (p.firstName || '').toLowerCase().trim();
+    const paternal = (p.paternalLastName || '').toLowerCase().trim();
+    return nameParts.includes(firstName) && nameParts.includes(paternal);
   });
 }
 
@@ -279,9 +288,18 @@ export function isPersonAlive(person) {
 function findParentByNameLocal(parentName, allPersons) {
   if (!parentName) return null;
   const normalizedName = parentName.toLowerCase().trim();
-  return allPersons.find(p => {
+
+  const exactMatch = allPersons.find(p => {
     const fullName = `${p.firstName || ''} ${p.paternalLastName || ''} ${p.maternalLastName || ''}`.toLowerCase().trim();
     return fullName === normalizedName;
+  });
+  if (exactMatch) return exactMatch;
+
+  const nameParts = normalizedName.split(/\s+/).filter(Boolean);
+  return allPersons.find(p => {
+    const firstName = (p.firstName || '').toLowerCase().trim();
+    const paternal = (p.paternalLastName || '').toLowerCase().trim();
+    return nameParts.includes(firstName) && nameParts.includes(paternal);
   });
 }
 
@@ -337,8 +355,10 @@ export function computeStats(persons) {
   const generations = {};
   approved.forEach(p => {
     const gen = computeGeneration(p, approved, memo);
+    console.log(`[Stats] ${p.firstName} ${p.paternalLastName}: gen=${gen}, fatherName=${p.fatherName}, motherName=${p.motherName}, parentIds=${p.parentIds}`);
     generations[gen] = (generations[gen] || 0) + 1;
   });
 
+  console.log('[Stats] Generations:', generations);
   return { total, alive, deceased, generations, approved };
 }
