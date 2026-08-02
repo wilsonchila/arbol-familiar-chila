@@ -13,7 +13,7 @@ export default function PersonCard({ person, user, roleOverride, onEdit, onDelet
   const initials = (person.firstName?.[0] || '') + (person.paternalLastName?.[0] || '');
 
   return (
-    <div className={`person-card ${!person.isAlive ? 'deceased' : ''}`}>
+    <div id={`person-${person.id}`} className={`person-card ${!person.isAlive ? 'deceased' : ''}`}>
       {(person.fatherName || person.motherName) && (
         <div className="parents-info">
           {person.fatherName && <span className="parent-name">&#9794; {person.fatherName}</span>}
